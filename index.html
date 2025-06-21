@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Entity Converter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/iconify/3.1.1/iconify.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #4C5B61 0%, #829191 25%, #2C423F 50%, #001514 75%, #C2D076 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff1493 0%, #8a2be2 50%, #00ced1 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            opacity: 0.95;
+            font-size: 1.2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .converter-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .input-section, .output-section {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .input-section:hover, .output-section:hover {
+            border-color: rgba(255, 20, 147, 0.6);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(255, 20, 147, 0.2);
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-title iconify-icon {
+            font-size: 1.6rem;
+            color: #ffa500;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 250px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 15px;
+            line-height: 1.6;
+            resize: vertical;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            color: #2d3748;
+            backdrop-filter: blur(5px);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #ff1493;
+            box-shadow: 0 0 0 4px rgba(255, 20, 147, 0.2);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        textarea::placeholder {
+            color: #888;
+            font-style: italic;
+        }
+
+        .output-section {
+            position: relative;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+            z-index: 10;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-3px) scale(1.1);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+        }
+
+        .copy-btn:active {
+            transform: translateY(-1px) scale(1.05);
+        }
+
+        .options {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 600;
+            color: white;
+            font-size: 1.1rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            accent-color: #ff1493;
+            cursor: pointer;
+            transform: scale(1.2);
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .mode-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #ff1493 0%, #8a2be2 100%);
+            box-shadow: 0 8px 25px rgba(255, 20, 147, 0.4);
+            transform: translateY(-3px);
+        }
+
+        .mode-btn:not(.active) {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .mode-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .clear-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff1493 100%);
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+            z-index: 1000;
+        }
+
+        .clear-btn:hover {
+            transform: scale(1.1) rotate(180deg);
+            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.5);
+        }
+
+        .example {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-left: 6px solid #ffa500;
+        }
+
+        .example h3 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .example-content {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin: 15px 0;
+            overflow-x: auto;
+            color: #2d3748;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .arrow {
+            text-align: center;
+            font-size: 2rem;
+            color: #ffa500;
+            margin: 15px 0;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #00ced1 0%, #ff1493 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 206, 209, 0.3);
+            z-index: 2000;
+            font-weight: 600;
+            font-size: 1.1rem;
+            animation: slideIn 0.5s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%) scale(0.8); opacity: 0; }
+            to { transform: translateX(0) scale(1); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0) scale(1); opacity: 1; }
+            to { transform: translateX(100%) scale(0.8); opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .converter-section {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .mode-selector {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .mode-btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .clear-btn {
+                bottom: 20px;
+                right: 20px;
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><iconify-icon icon="fluent:code-24-filled"></iconify-icon> HTML Entity Converter</h1>
+            <p>Auto-convert between HTML code and entities in real-time</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="mode-selector">
+                <button class="mode-btn active" data-mode="encode">
+                    <iconify-icon icon="solar:lock-bold"></iconify-icon>
+                    HTML → Entities
+                </button>
+                <button class="mode-btn" data-mode="decode">
+                    <iconify-icon icon="solar:lock-unlocked-bold"></iconify-icon>
+                    Entities → HTML
+                </button>
+            </div>
+
+            <div class="converter-section">
+                <div class="input-section">
+                    <div class="section-title">
+                        <iconify-icon icon="material-symbols:input"></iconify-icon>
+                        Input
+                    </div>
+                    <textarea 
+                        id="input" 
+                        placeholder="Start typing your HTML code or entities..."
+                        spellcheck="false"
+                    ></textarea>
+                </div>
+                
+                <div class="output-section">
+                    <div class="section-title">
+                        <iconify-icon icon="material-symbols:output"></iconify-icon>
+                        Output
+                    </div>
+                    <button class="copy-btn" onclick="copyToClipboard()" title="Copy to clipboard">
+                        <iconify-icon icon="solar:copy-bold"></iconify-icon>
+                    </button>
+                    <textarea 
+                        id="output" 
+                        placeholder="Converted result appears here automatically..."
+                        readonly
+                        spellcheck="false"
+                    ></textarea>
+                </div>
+            </div>
+            
+            <div class="options">
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="wrapPre">
+                    <label for="wrapPre">
+                        <iconify-icon icon="tabler:code"></iconify-icon>
+                        Wrap output with &lt;pre&gt; tags
+                    </label>
+                </div>
+            </div>
+            
+            <div class="example">
+                <h3>
+                    <iconify-icon icon="material-symbols:lightbulb"></iconify-icon>
+                    Example Usage:
+                </h3>
+                <div class="example-content">&lt;header role="banner"&gt;Welcome to my site&lt;/header&gt;</div>
+                <div class="arrow">↓ Auto-converts to ↓</div>
+                <div class="example-content">&amp;lt;header role=&amp;quot;banner&amp;quot;&amp;gt;Welcome to my site&amp;lt;/header&amp;gt;</div>
+                <div class="arrow">↓ With &lt;pre&gt; wrapper ↓</div>
+                <div class="example-content">&lt;pre&gt;&amp;lt;header role=&amp;quot;banner&amp;quot;&amp;gt;Welcome to my site&amp;lt;/header&amp;gt;&lt;/pre&gt;</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="clear-btn" onclick="clearAll()" title="Clear all content">
+        <iconify-icon icon="material-symbols:delete-forever"></iconify-icon>
+    </button>
+
+    <script>
+        const inputElement = document.getElementById('input');
+        const outputElement = document.getElementById('output');
+        const wrapPreCheckbox = document.getElementById('wrapPre');
+        const modeButtons = document.querySelectorAll('.mode-btn');
+        
+        let currentMode = 'encode';
+
+        // HTML entity mapping
+        const htmlEntities = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+            '/': '&#x2F;'
+        };
+
+        // Reverse mapping for decoding
+        const entityToHtml = {};
+        for (let key in htmlEntities) {
+            entityToHtml[htmlEntities[key]] = key;
+        }
+
+        // Mode switching
+        modeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                modeButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentMode = button.dataset.mode;
+                convertText(); // Auto-convert when mode changes
+            });
+        });
+
+        function encodeHtml(text) {
+            return text.replace(/[&<>"'\/]/g, function(match) {
+                return htmlEntities[match];
+            });
+        }
+
+        function decodeHtml(text) {
+            // Remove pre tags if present
+            text = text.replace(/^<pre>(.*)<\/pre>$/s, '$1');
+            
+            // Decode entities
+            return text.replace(/&(amp|lt|gt|quot|#39|#x2F);/g, function(match) {
+                return entityToHtml[match] || match;
+            });
+        }
+
+        function convertText() {
+            const input = inputElement.value;
+            if (!input.trim()) {
+                outputElement.value = '';
+                return;
+            }
+
+            let result;
+            if (currentMode === 'encode') {
+                result = encodeHtml(input);
+            } else {
+                result = decodeHtml(input);
+            }
+
+            if (wrapPreCheckbox.checked) {
+                result = `<pre>${result}</pre>`;
+            }
+
+            outputElement.value = result;
+            autoResize(outputElement);
+        }
+
+        function copyToClipboard() {
+            const output = outputElement.value;
+            if (!output.trim()) {
+                showNotification('Nothing to copy!', 'warning');
+                return;
+            }
+
+            navigator.clipboard.writeText(output).then(() => {
+                showNotification('Copied to clipboard!', 'success');
+            }).catch(() => {
+                // Fallback for older browsers
+                outputElement.select();
+                document.execCommand('copy');
+                showNotification('Copied to clipboard!', 'success');
+            });
+        }
+
+        function clearAll() {
+            inputElement.value = '';
+            outputElement.value = '';
+            autoResize(inputElement);
+            autoResize(outputElement);
+            inputElement.focus();
+            showNotification('All content cleared!', 'info');
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            
+            let icon;
+            switch(type) {
+                case 'success':
+                    icon = 'material-symbols:check-circle';
+                    break;
+                case 'warning':
+                    icon = 'material-symbols:warning';
+                    break;
+                case 'info':
+                default:
+                    icon = 'material-symbols:info';
+                    break;
+            }
+            
+            notification.innerHTML = `
+                <iconify-icon icon="${icon}"></iconify-icon>
+                ${message}
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.5s ease';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 500);
+            }, 3000);
+        }
+
+        function autoResize(element) {
+            element.style.height = 'auto';
+            element.style.height = Math.max(250, element.scrollHeight) + 'px';
+        }
+
+        // Auto-convert on input
+        inputElement.addEventListener('input', () => {
+            convertText();
+            autoResize(inputElement);
+        });
+
+        // Auto-convert when pre-wrap option changes
+        wrapPreCheckbox.addEventListener('change', convertText);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'k':
+                        e.preventDefault();
+                        clearAll();
+                        break;
+                    case 'c':
+                        if (document.activeElement === outputElement) {
+                            e.preventDefault();
+                            copyToClipboard();
+                        }
+                        break;
+                    case '1':
+                        e.preventDefault();
+                        modeButtons[0].click();
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        modeButtons[1].click();
+                        break;
+                }
+            }
+        });
+
+        // Focus input on load
+        window.addEventListener('load', () => {
+            inputElement.focus();
+        });
+    </script>
+</body>
+</html>
