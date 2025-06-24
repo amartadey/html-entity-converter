@@ -417,7 +417,7 @@
                         <div class="checkbox-wrapper">
                             <input type="checkbox" id="removeSpaces">
                             <label for="removeSpaces">
-                                Remove all spaces from input
+                                Remove trailing spaces from wrapped content
                             </label>
                         </div>
                     </div>
@@ -479,14 +479,12 @@
             return selectedOption ? selectedOption.value : 'none';
         }
 
-        function processInput(text) {
-            if (removeSpacesCheckbox.checked) {
-                return text.replace(/\s/g, '');
-            }
-            return text;
-        }
-
         function wrapOutput(text, wrapType) {
+            // Remove trailing whitespace from the content if the option is checked
+            if (removeSpacesCheckbox.checked) {
+                text = text.trimEnd();
+            }
+            
             switch (wrapType) {
                 case 'pre':
                     return `<pre>${text}</pre>`;
@@ -521,23 +519,20 @@
                 return;
             }
 
-            // Process input (remove spaces if option is checked)
-            const processedInput = processInput(input);
-
             let result;
             if (currentMode === 'encode') {
-                result = encodeHtml(processedInput);
+                result = encodeHtml(input);
             } else {
-                result = decodeHtml(processedInput);
+                result = decodeHtml(input);
             }
 
-            // Apply wrapping option
+            // Apply wrapping option (this will handle trailing space removal)
             const wrapOption = getSelectedWrapOption();
             result = wrapOutput(result, wrapOption);
 
             outputElement.value = result;
             autoResize(outputElement);
-            updateVariations(processedInput);
+            updateVariations(input);
         }
 
         function updateVariations(input) {
@@ -548,28 +543,22 @@
 
             const encoded = encodeHtml(input);
             const decoded = decodeHtml(input);
-            const wrappedPreEncoded = `<pre>${encoded}</pre>`;
-            const wrappedCodeEncoded = `<code>${encoded}</code>`;
-            const processedInput = removeSpacesCheckbox.checked ? input.replace(/\s/g, '') : input;
+            
+            // Create wrapped variations with proper trailing space handling
+            const wrappedPreEncoded = removeSpacesCheckbox.checked ? 
+                `<pre>${encoded.trimEnd()}</pre>` : `<pre>${encoded}</pre>`;
+            const wrappedCodeEncoded = removeSpacesCheckbox.checked ? 
+                `<code>${encoded.trimEnd()}</code>` : `<code>${encoded}</code>`;
 
             const variations = [
                 { title: 'Original Text', content: input },
-                { title: 'Processed Input' + (removeSpacesCheckbox.checked ? ' (spaces removed)' : ''), content: processedInput },
                 { title: 'HTML Entities', content: encoded },
                 { title: 'Wrapped in <pre> tags', content: wrappedPreEncoded },
                 { title: 'Wrapped in <code> tags', content: wrappedCodeEncoded }
             ];
 
-            // Only show processed input variation if it's different from original
-            const filteredVariations = variations.filter((variation, index) => {
-                if (index === 1) { // Processed Input variation
-                    return variation.content !== variations[0].content;
-                }
-                return true;
-            });
-
             variationsContent.innerHTML = '';
-            filteredVariations.forEach((variation, index) => {
+            variations.forEach((variation, index) => {
                 const variationDiv = document.createElement('div');
                 variationDiv.className = 'variation-item';
                 
