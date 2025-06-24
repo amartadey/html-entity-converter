@@ -462,17 +462,34 @@
                 { title: 'Wrapped in <pre> tags', content: wrappedEncoded }
             ];
 
-            variationsContent.innerHTML = variations.map(variation => `
-                <div class="variation-item">
-                    <div class="variation-header">
-                        <span>${variation.title}</span>
-                        <button class="variation-copy-btn" onclick="copyVariation('${variation.content.replace(/'/g, "\\'")}')">
-                            Copy
-                        </button>
-                    </div>
-                    <div class="variation-content">${variation.content}</div>
-                </div>
-            `).join('');
+            variationsContent.innerHTML = '';
+            variations.forEach((variation, index) => {
+                const variationDiv = document.createElement('div');
+                variationDiv.className = 'variation-item';
+                
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'variation-header';
+                
+                const titleSpan = document.createElement('span');
+                titleSpan.textContent = variation.title;
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'variation-copy-btn';
+                copyBtn.textContent = 'Copy';
+                copyBtn.addEventListener('click', () => copyVariation(variation.content));
+                
+                headerDiv.appendChild(titleSpan);
+                headerDiv.appendChild(copyBtn);
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'variation-content';
+                contentDiv.textContent = variation.content;
+                
+                variationDiv.appendChild(headerDiv);
+                variationDiv.appendChild(contentDiv);
+                
+                variationsContent.appendChild(variationDiv);
+            });
         }
 
         function copyVariation(content) {
