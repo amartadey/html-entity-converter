@@ -185,38 +185,63 @@
             transform: scale(1.05);
         }
 
-        .example {
-            background: #fef3c7;
-            border: 1px solid #fbbf24;
+        .variations {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
             border-radius: 8px;
             padding: 16px;
             margin-top: 20px;
         }
 
-        .example h3 {
-            color: #92400e;
-            margin-bottom: 12px;
+        .variations h3 {
+            color: #0c4a6e;
+            margin-bottom: 16px;
             font-size: 1.1rem;
             font-weight: 600;
         }
 
-        .example-content {
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', monospace;
+        .variation-item {
+            margin-bottom: 12px;
             background: white;
-            padding: 12px;
-            border-radius: 4px;
-            border: 1px solid #e5e7eb;
-            margin: 8px 0;
-            font-size: 13px;
-            word-break: break-all;
+            border-radius: 6px;
+            border: 1px solid #e0e7ff;
+            overflow: hidden;
         }
 
-        .arrow {
-            text-align: center;
-            font-size: 1.2rem;
-            color: #f59e0b;
-            margin: 8px 0;
-            font-weight: bold;
+        .variation-header {
+            background: #f1f5f9;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .variation-content {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', monospace;
+            padding: 12px;
+            font-size: 13px;
+            word-break: break-all;
+            background: white;
+            border-top: 1px solid #e0e7ff;
+        }
+
+        .variation-copy-btn {
+            background: #0ea5e9;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            color: white;
+            font-size: 11px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .variation-copy-btn:hover {
+            background: #0284c7;
         }
 
         .notification {
@@ -241,6 +266,13 @@
         @keyframes slideOut {
             from { transform: translateX(0); opacity: 1; }
             to { transform: translateX(100%); opacity: 0; }
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #94a3b8;
+            font-style: italic;
+            padding: 20px;
         }
 
         @media (max-width: 768px) {
@@ -325,13 +357,13 @@
                 </div>
             </div>
             
-            <div class="example">
-                <h3>💡 Example Usage:</h3>
-                <div class="example-content">&lt;header role="banner"&gt;Welcome to my site&lt;/header&gt;</div>
-                <div class="arrow">↓ Auto-converts to ↓</div>
-                <div class="example-content">&amp;lt;header role=&amp;quot;banner&amp;quot;&amp;gt;Welcome to my site&amp;lt;/header&amp;gt;</div>
-                <div class="arrow">↓ With &lt;pre&gt; wrapper ↓</div>
-                <div class="example-content">&lt;pre&gt;&amp;lt;header role=&amp;quot;banner&amp;quot;&amp;gt;Welcome to my site&amp;lt;/header&amp;gt;&lt;/pre&gt;</div>
+            <div class="variations" id="variations">
+                <h3>📋 Copy Variations:</h3>
+                <div id="variations-content">
+                    <div class="empty-state">
+                        Enter some text above to see all format variations
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -345,17 +377,17 @@
         const outputElement = document.getElementById('output');
         const wrapPreCheckbox = document.getElementById('wrapPre');
         const modeButtons = document.querySelectorAll('.mode-btn');
+        const variationsContent = document.getElementById('variations-content');
         
         let currentMode = 'encode';
 
-        // HTML entity mapping
+        // HTML entity mapping (removed unnecessary forward slash encoding)
         const htmlEntities = {
             '&': '&amp;',
             '<': '&lt;',
             '>': '&gt;',
             '"': '&quot;',
-            "'": '&#39;',
-            '/': '&#x2F;'
+            "'": '&#39;'
         };
 
         // Reverse mapping for decoding
@@ -375,7 +407,7 @@
         });
 
         function encodeHtml(text) {
-            return text.replace(/[&<>"'\/]/g, function(match) {
+            return text.replace(/[&<>"']/g, function(match) {
                 return htmlEntities[match];
             });
         }
@@ -385,7 +417,7 @@
             text = text.replace(/^<pre>(.*)<\/pre>$/s, '$1');
             
             // Decode entities
-            return text.replace(/&(amp|lt|gt|quot|#39|#x2F);/g, function(match) {
+            return text.replace(/&(amp|lt|gt|quot|#39);/g, function(match) {
                 return entityToHtml[match] || match;
             });
         }
@@ -394,6 +426,7 @@
             const input = inputElement.value;
             if (!input.trim()) {
                 outputElement.value = '';
+                updateVariations('');
                 return;
             }
 
@@ -410,6 +443,51 @@
 
             outputElement.value = result;
             autoResize(outputElement);
+            updateVariations(input);
+        }
+
+        function updateVariations(input) {
+            if (!input.trim()) {
+                variationsContent.innerHTML = '<div class="empty-state">Enter some text above to see all format variations</div>';
+                return;
+            }
+
+            const encoded = encodeHtml(input);
+            const decoded = decodeHtml(input);
+            const wrappedEncoded = `<pre>${encoded}</pre>`;
+
+            const variations = [
+                { title: 'Original Text', content: input },
+                { title: 'HTML Entities', content: encoded },
+                { title: 'Wrapped in <pre> tags', content: wrappedEncoded }
+            ];
+
+            variationsContent.innerHTML = variations.map(variation => `
+                <div class="variation-item">
+                    <div class="variation-header">
+                        <span>${variation.title}</span>
+                        <button class="variation-copy-btn" onclick="copyVariation('${variation.content.replace(/'/g, "\\'")}')">
+                            Copy
+                        </button>
+                    </div>
+                    <div class="variation-content">${variation.content}</div>
+                </div>
+            `).join('');
+        }
+
+        function copyVariation(content) {
+            navigator.clipboard.writeText(content).then(() => {
+                showNotification('Variation copied to clipboard!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const tempTextarea = document.createElement('textarea');
+                tempTextarea.value = content;
+                document.body.appendChild(tempTextarea);
+                tempTextarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempTextarea);
+                showNotification('Variation copied to clipboard!');
+            });
         }
 
         function copyToClipboard() {
@@ -434,6 +512,7 @@
             outputElement.value = '';
             autoResize(inputElement);
             autoResize(outputElement);
+            updateVariations('');
             inputElement.focus();
             showNotification('All content cleared!');
         }
