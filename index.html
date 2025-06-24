@@ -150,6 +150,26 @@
             border: 1px solid #e2e8f0;
         }
 
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-group h4 {
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
         .checkbox-wrapper {
             display: flex;
             align-items: center;
@@ -158,6 +178,25 @@
         }
 
         .checkbox-wrapper input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #3b82f6;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .radio-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .radio-wrapper input[type="radio"] {
             width: 16px;
             height: 16px;
             accent-color: #3b82f6;
@@ -281,6 +320,11 @@
                 gap: 16px;
             }
             
+            .options-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
             .main-content {
                 padding: 16px;
             }
@@ -349,11 +393,34 @@
             </div>
             
             <div class="options">
-                <div class="checkbox-wrapper">
-                    <input type="checkbox" id="wrapPre">
-                    <label for="wrapPre">
-                        📋 Wrap output with &lt;pre&gt; tags
-                    </label>
+                <div class="options-grid">
+                    <div class="option-group">
+                        <h4>🏷️ Wrapping Options</h4>
+                        <div class="radio-group">
+                            <div class="radio-wrapper">
+                                <input type="radio" id="wrapNone" name="wrapOption" value="none" checked>
+                                <label for="wrapNone">No wrapper tags</label>
+                            </div>
+                            <div class="radio-wrapper">
+                                <input type="radio" id="wrapPre" name="wrapOption" value="pre">
+                                <label for="wrapPre">Wrap with &lt;pre&gt; tags</label>
+                            </div>
+                            <div class="radio-wrapper">
+                                <input type="radio" id="wrapCode" name="wrapOption" value="code">
+                                <label for="wrapCode">Wrap with &lt;code&gt; tags</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="option-group">
+                        <h4>🧹 Processing Options</h4>
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="removeSpaces">
+                            <label for="removeSpaces">
+                                Remove all spaces from input
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -375,7 +442,8 @@
     <script>
         const inputElement = document.getElementById('input');
         const outputElement = document.getElementById('output');
-        const wrapPreCheckbox = document.getElementById('wrapPre');
+        const removeSpacesCheckbox = document.getElementById('removeSpaces');
+        const wrapOptions = document.querySelectorAll('input[name="wrapOption"]');
         const modeButtons = document.querySelectorAll('.mode-btn');
         const variationsContent = document.getElementById('variations-content');
         
@@ -406,6 +474,29 @@
             });
         });
 
+        function getSelectedWrapOption() {
+            const selectedOption = document.querySelector('input[name="wrapOption"]:checked');
+            return selectedOption ? selectedOption.value : 'none';
+        }
+
+        function processInput(text) {
+            if (removeSpacesCheckbox.checked) {
+                return text.replace(/\s/g, '');
+            }
+            return text;
+        }
+
+        function wrapOutput(text, wrapType) {
+            switch (wrapType) {
+                case 'pre':
+                    return `<pre>${text}</pre>`;
+                case 'code':
+                    return `<code>${text}</code>`;
+                default:
+                    return text;
+            }
+        }
+
         function encodeHtml(text) {
             return text.replace(/[&<>"']/g, function(match) {
                 return htmlEntities[match];
@@ -413,8 +504,8 @@
         }
 
         function decodeHtml(text) {
-            // Remove pre tags if present
-            text = text.replace(/^<pre>(.*)<\/pre>$/s, '$1');
+            // Remove wrapper tags if present
+            text = text.replace(/^<(pre|code)>(.*)<\/\1>$/s, '$2');
             
             // Decode entities
             return text.replace(/&(amp|lt|gt|quot|#39);/g, function(match) {
@@ -423,27 +514,30 @@
         }
 
         function convertText() {
-            const input = inputElement.value;
+            let input = inputElement.value;
             if (!input.trim()) {
                 outputElement.value = '';
                 updateVariations('');
                 return;
             }
 
+            // Process input (remove spaces if option is checked)
+            const processedInput = processInput(input);
+
             let result;
             if (currentMode === 'encode') {
-                result = encodeHtml(input);
+                result = encodeHtml(processedInput);
             } else {
-                result = decodeHtml(input);
+                result = decodeHtml(processedInput);
             }
 
-            if (wrapPreCheckbox.checked) {
-                result = `<pre>${result}</pre>`;
-            }
+            // Apply wrapping option
+            const wrapOption = getSelectedWrapOption();
+            result = wrapOutput(result, wrapOption);
 
             outputElement.value = result;
             autoResize(outputElement);
-            updateVariations(input);
+            updateVariations(processedInput);
         }
 
         function updateVariations(input) {
@@ -454,16 +548,28 @@
 
             const encoded = encodeHtml(input);
             const decoded = decodeHtml(input);
-            const wrappedEncoded = `<pre>${encoded}</pre>`;
+            const wrappedPreEncoded = `<pre>${encoded}</pre>`;
+            const wrappedCodeEncoded = `<code>${encoded}</code>`;
+            const processedInput = removeSpacesCheckbox.checked ? input.replace(/\s/g, '') : input;
 
             const variations = [
                 { title: 'Original Text', content: input },
+                { title: 'Processed Input' + (removeSpacesCheckbox.checked ? ' (spaces removed)' : ''), content: processedInput },
                 { title: 'HTML Entities', content: encoded },
-                { title: 'Wrapped in <pre> tags', content: wrappedEncoded }
+                { title: 'Wrapped in <pre> tags', content: wrappedPreEncoded },
+                { title: 'Wrapped in <code> tags', content: wrappedCodeEncoded }
             ];
 
+            // Only show processed input variation if it's different from original
+            const filteredVariations = variations.filter((variation, index) => {
+                if (index === 1) { // Processed Input variation
+                    return variation.content !== variations[0].content;
+                }
+                return true;
+            });
+
             variationsContent.innerHTML = '';
-            variations.forEach((variation, index) => {
+            filteredVariations.forEach((variation, index) => {
                 const variationDiv = document.createElement('div');
                 variationDiv.className = 'variation-item';
                 
@@ -562,8 +668,11 @@
             autoResize(inputElement);
         });
 
-        // Auto-convert when pre-wrap option changes
-        wrapPreCheckbox.addEventListener('change', convertText);
+        // Auto-convert when options change
+        removeSpacesCheckbox.addEventListener('change', convertText);
+        wrapOptions.forEach(option => {
+            option.addEventListener('change', convertText);
+        });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
